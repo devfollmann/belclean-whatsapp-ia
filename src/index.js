@@ -49,6 +49,16 @@ http.createServer(async (req, res) => {
   }
 }).listen(PORT, () => console.log(`🌐 QR Code disponível em /qr (porta ${PORT})`));
 
+// Fila por conversa para evitar race condition com mensagens simultâneas
+const filas = new Map();
+
+async function enfileirar(jid, fn) {
+  if (!filas.has(jid)) filas.set(jid, Promise.resolve());
+  const fila = filas.get(jid).then(fn).catch(() => {});
+  filas.set(jid, fila);
+  return fila;
+}
+
 // Número do dono — comandos /parar e /retomar só funcionam vindos deste número
 const NUMERO_DONO = '556298519744' ; // seu número sem + e sem traço
 
@@ -124,72 +134,60 @@ async function conectar() {
 
       console.log(`📩 [${jid}]: ${texto}`);
 
-      // Comandos do dono (mensagens enviadas para si mesmo)
-      if (msg.key.fromMe && ehDono(jid)) {
-        const cmd = texto.trim().toLowerCase();
-        const match = cmd.match(/^\/(parar|retomar)\s+(\d+)/);
-        if (match) {
-          const acao = match[1];
-          const numero = match[2] + '@s.whatsapp.net';
-          if (acao === 'parar') {
-            ativarAtendimentoHumano(numero);
-            await sock.sendMessage(jid, { text: `✅ IA pausada para ${match[2]}. Você pode atender agora.` });
-            console.log(`⏸️  IA pausada para ${numero} pelo dono.`);
-          } else {
-            resetarAtendimentoHumano(numero);
-            await sock.sendMessage(jid, { text: `✅ IA reativada para ${match[2]}.` });
-            console.log(`▶️  IA reativada para ${numero} pelo dono.`);
-          }
-        }
-        continue;
-      }
-
-      // Verificar se está em atendimento humano
-      if (estaEmAtendimentoHumano(jid)) {
-        console.log(`👤 [${jid}] Em atendimento humano — IA silenciada.`);
-        continue;
-      }
-
-      // Verificar se está pedindo atendimento humano
-      if (pedindoAtendimentoHumano(texto)) {
-        ativarAtendimentoHumano(jid);
-        const aviso = 'Claro! Vou chamar nossa equipe. Um momento, já te atendo pessoalmente! 👋';
-        await sock.sendMessage(jid, { text: aviso });
-        console.log(`👤 [${jid}] Handoff para humano ativado.`);
-        continue;
-      }
-
-      // Buscar histórico da conversa (sem a mensagem atual)
-      const historico = obterHistorico(jid);
-
-      // Adicionar mensagem do usuário ao histórico
-      adicionarMensagem(jid, 'user', texto);
-
-      // Gerar resposta com IA
-      try {
-        await sock.sendPresenceUpdate('composing', jid);
-        const ocupados = listarOcupados();
-        const resposta = await gerarResposta(historico, texto, ocupados);
-        await sock.sendPresenceUpdate('paused', jid);
-
-        adicionarMensagem(jid, 'model', resposta);
-
-        await sock.sendMessage(jid, { text: resposta });
-
-        // Detectar confirmação de agendamento e salvar
-        if (resposta.includes('agendamento realizado com sucesso')) {
-          const historioCompleto = obterHistorico(jid);
-          extrairAgendamento(historioCompleto).then((dados) => {
-            if (dados?.data) {
-              adicionarAgendamento({ ...dados, cliente: jid });
-              console.log(`📅 Agendamento salvo: ${dados.data} às ${dados.horario} — ${dados.servico} em ${dados.cidade}`);
+      enfileirar(jid, async () => {
+        // Comandos do dono
+        if (msg.key.fromMe && ehDono(jid)) {
+          const match = texto.trim().match(/^\/(parar|retomar)\s+(\d+)/i);
+          if (match) {
+            const numero = match[2] + '@s.whatsapp.net';
+            if (match[1].toLowerCase() === 'parar') {
+              ativarAtendimentoHumano(numero);
+              await sock.sendMessage(jid, { text: `✅ IA pausada para ${match[2]}. Você pode atender agora.` });
+            } else {
+              resetarAtendimentoHumano(numero);
+              await sock.sendMessage(jid, { text: `✅ IA reativada para ${match[2]}.` });
             }
-          });
+          }
+          return;
         }
-        console.log(`🤖 [${jid}]: ${resposta.substring(0, 80)}...`);
-      } catch (err) {
-        console.error(`Erro ao responder [${jid}]:`, err.message);
-      }
+
+        // Ignorar se em atendimento humano
+        if (estaEmAtendimentoHumano(jid)) {
+          console.log(`👤 [${jid}] Em atendimento humano — IA silenciada.`);
+          return;
+        }
+
+        // Verificar se está pedindo atendimento humano
+        if (pedindoAtendimentoHumano(texto)) {
+          ativarAtendimentoHumano(jid);
+          await sock.sendMessage(jid, { text: 'Claro! Vou chamar nossa equipe. Um momento, já te atendo pessoalmente! 👋' });
+          console.log(`👤 [${jid}] Handoff para humano ativado.`);
+          return;
+        }
+
+        const historico = obterHistorico(jid);
+        adicionarMensagem(jid, 'user', texto);
+
+        try {
+          await sock.sendPresenceUpdate('composing', jid);
+          const resposta = await gerarResposta(historico, texto, listarOcupados());
+          await sock.sendPresenceUpdate('paused', jid);
+          adicionarMensagem(jid, 'model', resposta);
+          await sock.sendMessage(jid, { text: resposta });
+
+          if (resposta.includes('agendamento realizado com sucesso')) {
+            extrairAgendamento(obterHistorico(jid)).then((dados) => {
+              if (dados?.data) {
+                adicionarAgendamento({ ...dados, cliente: jid });
+                console.log(`📅 Agendamento salvo: ${dados.data} às ${dados.horario}`);
+              }
+            });
+          }
+          console.log(`🤖 [${jid}]: ${resposta.substring(0, 80)}...`);
+        } catch (err) {
+          console.error(`Erro ao responder [${jid}]:`, err.message);
+        }
+      });
     }
   });
 }
