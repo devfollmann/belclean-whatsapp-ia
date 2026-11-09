@@ -2,24 +2,30 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { gerarPrompt } from './prompt.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function criarModel(horariosOcupados) {
-  return genAI.getGenerativeModel({
+export async function gerarResposta(historico, mensagemNova, horariosOcupados = []) {
+  const model = genAI.getGenerativeModel({
     model: 'gemini-3.5-flash',
-    systemInstruction: gerarPrompt(horariosOcupados),
     generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
   });
-}
 
-export async function gerarResposta(historico, mensagemNova, horariosOcupados = []) {
-  const model = criarModel(horariosOcupados);
+  // Montar conversa como texto simples — mais estável que a API de chat
+  const conversaAnterior = historico
+    .map((m) => `${m.role === 'user' ? 'Cliente' : 'Bela'}: ${m.parts[0].text}`)
+    .join('\n');
+
+  const promptFinal = `${gerarPrompt(horariosOcupados)}
+
+--- CONVERSA ATÉ AGORA ---
+${conversaAnterior}
+Cliente: ${mensagemNova}
+Bela:`;
+
   for (let tentativa = 1; tentativa <= 3; tentativa++) {
     try {
-      const chat = model.startChat({ history: historico });
-      const result = await chat.sendMessage(mensagemNova);
-      return result.response.text();
+      const result = await model.generateContent(promptFinal);
+      return result.response.text().trim();
     } catch (err) {
       console.error(`Erro na IA (tentativa ${tentativa}/3):`, err.message);
       if (tentativa < 3) await sleep(2000 * tentativa);
@@ -28,7 +34,6 @@ export async function gerarResposta(historico, mensagemNova, horariosOcupados = 
   return 'Desculpe, tive um probleminha aqui. Pode repetir sua mensagem? 😊';
 }
 
-// Extrai data e horário do agendamento confirmado usando a própria IA
 export async function extrairAgendamento(historico) {
   const model = genAI.getGenerativeModel({
     model: 'gemini-3.5-flash',
