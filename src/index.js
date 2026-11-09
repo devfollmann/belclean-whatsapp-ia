@@ -45,16 +45,18 @@ http.createServer(async (req, res) => {
       </body></html>`);
   } else if (req.url === '/teste-ia') {
     try {
-      const resposta = await gerarResposta(
-        [{ role: 'user', parts: [{ text: 'Boa tarde' }] }, { role: 'model', parts: [{ text: 'Boa tarde! Como posso ajudar?' }] }],
-        'Preciso limpar um sofá de 3 lugares em Goiânia',
-        []
-      );
+      const Groq = (await import('groq-sdk')).default;
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      const completion = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: 'Diga apenas: funcionou!' }],
+        max_tokens: 20,
+      });
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('SUCESSO:\n' + resposta);
+      res.end('SUCESSO:\n' + completion.choices[0].message.content + '\nChave: ' + (process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.substring(0,10) + '...' : 'VAZIA'));
     } catch (e) {
       res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('ERRO:\n' + e.message);
+      res.end('ERRO GROQ:\n' + e.message + '\nChave: ' + (process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.substring(0,10) + '...' : 'VAZIA'));
     }
   } else {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
