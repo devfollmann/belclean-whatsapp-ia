@@ -43,6 +43,20 @@ http.createServer(async (req, res) => {
       <p>Configurações → Dispositivos conectados → Conectar dispositivo</p>
       <img src="${imgData}"/><p><small>A página atualiza sozinha a cada 20 segundos</small></p>
       </body></html>`);
+  } else if (req.url === '/teste-ia') {
+    try {
+      const { gerarResposta } = await import('./ia.js');
+      const resposta = await gerarResposta(
+        [{ role: 'user', parts: [{ text: 'Boa tarde' }] }, { role: 'model', parts: [{ text: 'Boa tarde! Como posso ajudar?' }] }],
+        'Preciso limpar um sofá',
+        []
+      );
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('SUCESSO:\n' + resposta);
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('ERRO:\n' + e.message);
+    }
   } else {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('BEL Clean IA - ok');
