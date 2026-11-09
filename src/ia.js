@@ -16,7 +16,7 @@ export async function gerarResposta(historico, mensagemNova, horariosOcupados = 
   for (let tentativa = 1; tentativa <= 3; tentativa++) {
     try {
       const completion = await groq.chat.completions.create({
-        model: 'openai/gpt-oss-120b',
+        model: 'qwen/qwen3.8-27b',
         messages: [
           { role: 'system', content: gerarPrompt(horariosOcupados) },
           { role: 'user', content: mensagemCompleta },
@@ -39,7 +39,7 @@ export async function extrairAgendamento(historico) {
     .join('\n');
   try {
     const completion = await groq.chat.completions.create({
-      model: 'openai/gpt-oss-120b',
+      model: 'qwen/qwen3.8-27b',
       messages: [
         {
           role: 'user',
