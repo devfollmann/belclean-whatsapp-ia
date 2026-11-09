@@ -10,7 +10,8 @@ import makeWASocket, {
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
 import qrcode from 'qrcode-terminal';
-import { gerarResposta, extrairAgendamento } from './ia.js';
+import { gerarResposta, extrairAgendamento, transcreverAudio } from './ia.js';
+import { downloadMediaMessage } from '@whiskeysockets/baileys';
 import { adicionarAgendamento, listarOcupados } from './agenda.js';
 import {
   adicionarMensagem,
@@ -139,11 +140,35 @@ async function conectar() {
       if (msg.key.remoteJid === 'status@broadcast') continue;
 
       const jid = msg.key.remoteJid;
-      const texto =
-        msg.message?.conversation ||
-        msg.message?.extendedTextMessage?.text ||
-        msg.message?.imageMessage?.caption ||
-        '';
+      const isLocalizacao = !!msg.message?.locationMessage;
+      const isAudio = !!msg.message?.audioMessage;
+
+      let texto = '';
+      if (isLocalizacao) {
+        texto = '[cliente enviou a localização]';
+      } else if (isAudio) {
+        try {
+          await sock.sendPresenceUpdate('composing', jid);
+          const buffer = await downloadMediaMessage(msg, 'buffer', {}, { logger, reuploadRequest: sock.updateMediaMessage });
+          const transcricao = await transcreverAudio(buffer);
+          if (transcricao) {
+            texto = transcricao;
+            console.log(`🎤 [${jid}] Áudio transcrito: ${transcricao}`);
+          } else {
+            await sock.sendMessage(jid, { text: 'Não consegui entender o áudio 😕 Pode digitar sua mensagem?' });
+            continue;
+          }
+        } catch (err) {
+          console.error(`Erro ao processar áudio [${jid}]:`, err.message);
+          await sock.sendMessage(jid, { text: 'Não consegui processar o áudio 😕 Pode digitar sua mensagem?' });
+          continue;
+        }
+      } else {
+        texto = msg.message?.conversation ||
+          msg.message?.extendedTextMessage?.text ||
+          msg.message?.imageMessage?.caption ||
+          '';
+      }
 
       if (!texto.trim()) continue;
 

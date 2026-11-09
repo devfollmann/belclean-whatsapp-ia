@@ -1,5 +1,6 @@
 import Groq from 'groq-sdk';
 import { gerarPrompt } from './prompt.js';
+import { toFile } from 'groq-sdk';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -31,6 +32,21 @@ export async function gerarResposta(historico, mensagemNova, horariosOcupados = 
     }
   }
   return 'Desculpe, tive um probleminha aqui. Pode repetir sua mensagem? 😊';
+}
+
+export async function transcreverAudio(buffer) {
+  try {
+    const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' });
+    const transcription = await groq.audio.transcriptions.create({
+      file,
+      model: 'whisper-large-v3',
+      language: 'pt',
+    });
+    return transcription.text?.trim() || null;
+  } catch (err) {
+    console.error('Erro na transcrição de áudio:', err.message);
+    return null;
+  }
 }
 
 export async function extrairAgendamento(historico) {
