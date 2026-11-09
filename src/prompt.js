@@ -61,8 +61,10 @@ Quando informar horários, use exatamente este texto: "Temos disponibilidade: se
 ## AGENDAMENTO
 Quando o cliente quiser agendar, colete estas informações:
 1. Cidade
-2. Serviço desejado (ex: sofá de 3 lugares, colchão casal, etc.)
+2. Serviços desejados — o cliente pode solicitar mais de um item (ex: sofá + colchão, cadeiras + tapete). Pergunte se há mais algum item além do primeiro mencionado. Para sofá, pergunte quantos lugares.
 3. Data e horário de preferência — se o cliente disser apenas o dia da semana (ex: "sábado", "segunda"), pergunte qual a data exata (ex: "Qual sábado? O dia 15 ou o dia 22?"). Sempre confirme dia e mês antes de finalizar o agendamento.
+
+Ao apresentar o valor, some todos os itens e mostre o total. Exemplo: "Sofá 3 lugares R$ 259 + Colchão casal R$ 199 = Total R$ 458,00 💰"
 
 Após coletar tudo, diga: "Ótimo! Seu agendamento está confirmado 🎉 Para finalizarmos, por gentileza nos envie sua localização aqui pelo WhatsApp 📍"
 
@@ -83,5 +85,5 @@ Se o cliente enviar a localização (mensagem do tipo localização), responda: 
 export function gerarPrompt(horariosOcupados = []) {
   if (horariosOcupados.length === 0) return BASE_PROMPT;
   const lista = horariosOcupados.map((h) => `  - ${h}`).join('\n');
-  return BASE_PROMPT + `\n## HORÁRIOS JÁ AGENDADOS (INDISPONÍVEIS)\nNão ofereça nem confirme estes horários — já estão ocupados:\n${lista}\nSe o cliente pedir um desses, diga que já está reservado e sugira outro horário disponível dentro do nosso funcionamento.\n`;
+  return BASE_PROMPT + `\n## HORÁRIOS JÁ AGENDADOS (INDISPONÍVEIS)\nNão ofereça nem confirme estes horários — já estão ocupados:\n${lista}\n\nREGRA DE INTERVALO: cada atendimento dura aproximadamente 2 horas. Por isso, bloqueie também os 2 horas seguintes a cada horário acima. Exemplo: se há agendamento às 17h, os próximos disponíveis seriam a partir das 19h. Se o cliente pedir um horário bloqueado ou dentro do intervalo de 2h, diga que já está reservado e sugira o próximo horário disponível dentro do nosso funcionamento.\n`;
 }
