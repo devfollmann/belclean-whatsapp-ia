@@ -44,18 +44,17 @@ http.createServer(async (req, res) => {
       <img src="${imgData}"/><p><small>A página atualiza sozinha a cada 20 segundos</small></p>
       </body></html>`);
   } else if (req.url === '/teste-ia') {
+    const erros = [];
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
     try {
-      const { gerarResposta } = await import('./ia.js');
-      const resposta = await gerarResposta(
-        [{ role: 'user', parts: [{ text: 'Boa tarde' }] }, { role: 'model', parts: [{ text: 'Boa tarde! Como posso ajudar?' }] }],
-        'Preciso limpar um sofá',
-        []
-      );
+      const r = await model.generateContent('Quanto custa limpar um sofá de 3 lugares em Goiânia?');
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('SUCESSO:\n' + resposta);
+      res.end('SUCESSO:\n' + r.response.text());
     } catch (e) {
       res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('ERRO:\n' + e.message);
+      res.end('ERRO REAL:\n' + e.message);
     }
   } else {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
