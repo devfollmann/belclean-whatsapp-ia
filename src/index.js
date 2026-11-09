@@ -47,10 +47,13 @@ http.createServer(async (req, res) => {
     try {
       const Groq = (await import('groq-sdk')).default;
       const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-      const models = await groq.models.list();
-      const nomes = models.data.map(m => m.id).join('\n');
+      const completion = await groq.chat.completions.create({
+        model: 'openai/gpt-oss-120b',
+        messages: [{ role: 'user', content: 'Diga apenas: funcionou!' }],
+        max_tokens: 20,
+      });
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('MODELOS DISPONÍVEIS:\n' + nomes);
+      res.end('SUCESSO:\n' + completion.choices[0].message.content);
     } catch (e) {
       res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('ERRO GROQ:\n' + e.message + '\nChave: ' + (process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.substring(0,10) + '...' : 'VAZIA'));
