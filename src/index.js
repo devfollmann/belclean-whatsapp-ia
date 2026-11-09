@@ -48,7 +48,7 @@ http.createServer(async (req, res) => {
       const Groq = (await import('groq-sdk')).default;
       const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
       const completion = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-70b-versatile',
         messages: [{ role: 'user', content: 'Diga apenas: funcionou!' }],
         max_tokens: 20,
       });
