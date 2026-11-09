@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: belclean-whatsapp-ia
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+    disk:
+      name: auth
+      mountPath: /opt/render/project/src/auth_baileys
+      sizeGB: 1
