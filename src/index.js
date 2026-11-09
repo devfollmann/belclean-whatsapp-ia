@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import http from 'http';
+import QRCode from 'qrcode';
 import makeWASocket, {
   useMultiFileAuthState,
   DisconnectReason,
@@ -19,6 +21,33 @@ import {
 } from './conversas.js';
 
 const logger = pino({ level: 'silent' });
+
+// Servidor HTTP para exibir o QR Code no navegador
+let qrAtual = null;
+const PORT = process.env.PORT || 3000;
+
+http.createServer(async (req, res) => {
+  if (req.url === '/qr') {
+    if (!qrAtual) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<h2 style="font-family:sans-serif;text-align:center;margin-top:80px">✅ WhatsApp já está conectado!<br>Nenhum QR Code pendente.</h2>');
+      return;
+    }
+    const imgData = await QRCode.toDataURL(qrAtual, { width: 400 });
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>BEL Clean - QR Code</title>
+      <meta http-equiv="refresh" content="20">
+      <style>body{font-family:sans-serif;text-align:center;padding:40px;background:#f5f5f5}
+      img{border:8px solid #25D366;border-radius:16px;margin-top:20px}</style></head>
+      <body><h2>📱 Escaneie com o WhatsApp</h2>
+      <p>Configurações → Dispositivos conectados → Conectar dispositivo</p>
+      <img src="${imgData}"/><p><small>A página atualiza sozinha a cada 20 segundos</small></p>
+      </body></html>`);
+  } else {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('BEL Clean IA - ok');
+  }
+}).listen(PORT, () => console.log(`🌐 QR Code disponível em /qr (porta ${PORT})`));
 
 // Número do dono — comandos /parar e /retomar só funcionam vindos deste número
 const NUMERO_DONO = '556298519744' ; // seu número sem + e sem traço
@@ -52,7 +81,8 @@ async function conectar() {
 
   sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
     if (qr) {
-      console.log('\n📱 Escaneie o QR Code abaixo com o WhatsApp:\n');
+      qrAtual = qr;
+      console.log('\n📱 Acesse /qr no seu navegador para escanear o QR Code\n');
       qrcode.generate(qr, { small: true });
     }
 
@@ -69,6 +99,7 @@ async function conectar() {
     }
 
     if (connection === 'open') {
+      qrAtual = null;
       console.log('✅ BEL Clean IA conectada ao WhatsApp!');
     }
   });
