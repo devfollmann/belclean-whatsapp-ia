@@ -155,7 +155,7 @@ async function conectar() {
       // Comandos do dono (mensagens enviadas pelo próprio número)
       if (msg.key.fromMe) {
         const textoCmd = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-        const match = textoCmd.trim().match(/^\/(parar|retomar)\s+(\d+)/i);
+        const match = textoCmd.trim().match(/^\/(parar|retomar)\s+([\d@a-z.]+)/i);
         if (match) {
           const entrada = match[2].trim();
           let numero;
