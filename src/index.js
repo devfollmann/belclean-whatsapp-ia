@@ -157,13 +157,15 @@ async function conectar() {
         const textoCmd = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
         const match = textoCmd.trim().match(/^\/(parar|retomar)\s+(\d+)/i);
         if (match) {
-          const numero = match[2] + '@s.whatsapp.net';
+          let digitos = match[2].replace(/\D/g, '');
+          if (!digitos.startsWith('55')) digitos = '55' + digitos;
+          const numero = digitos + '@s.whatsapp.net';
           if (match[1].toLowerCase() === 'parar') {
             ativarAtendimentoHumano(numero);
-            await sock.sendMessage(jid, { text: `✅ IA pausada para ${match[2]}. Você pode atender agora.` });
+            await sock.sendMessage(jid, { text: `✅ IA pausada para ${digitos}. Você pode atender agora.` });
           } else {
             resetarAtendimentoHumano(numero);
-            await sock.sendMessage(jid, { text: `✅ IA reativada para ${match[2]}.` });
+            await sock.sendMessage(jid, { text: `✅ IA reativada para ${digitos}.` });
           }
         }
         continue;
