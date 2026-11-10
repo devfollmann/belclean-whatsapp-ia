@@ -87,7 +87,7 @@ async function enfileirar(jid, fn) {
 // Número do dono — comandos /parar e /retomar só funcionam vindos deste número
 const NUMERO_DONO = '556298519744' ; // seu número sem + e sem traço
 
-const PALAVRAS_HUMANO = ['atendente', 'humano', 'falar com alguém', 'falar com alguem', 'pessoa real', 'operador'];
+const PALAVRAS_HUMANO = ['atendente', 'humano', 'falar com alguém', 'falar com alguem', 'pessoa real', 'falar com operador', 'quero operador'];
 
 function pedindoAtendimentoHumano(texto) {
   const t = texto.toLowerCase();
@@ -147,6 +147,8 @@ async function conectar() {
     for (const msg of messages) {
       if (msg.key.remoteJid.endsWith('@g.us')) continue;
       if (msg.key.remoteJid === 'status@broadcast') continue;
+      if (msg.key.remoteJid.endsWith('@newsletter')) continue;
+      if (msg.key.remoteJid.endsWith('@broadcast')) continue;
 
       const jid = msg.key.remoteJid;
 
