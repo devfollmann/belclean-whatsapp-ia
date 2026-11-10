@@ -87,8 +87,32 @@ Ao finalizar qualquer atendimento (após confirmar agendamento, responder dúvid
 - Seja breve. Não escreva textos longos demais.
 `;
 
+function dataAtual() {
+  const agora = new Date();
+  const dias = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+  const diaSemana = dias[agora.getDay()];
+  const dia = String(agora.getDate()).padStart(2, '0');
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const ano = agora.getFullYear();
+
+  // Calcula as próximas ocorrências de cada dia da semana nos próximos 14 dias
+  const proximas = [];
+  for (let i = 1; i <= 14; i++) {
+    const d = new Date(agora);
+    d.setDate(agora.getDate() + i);
+    proximas.push({
+      diaSemana: dias[d.getDay()],
+      data: `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`,
+    });
+  }
+  const resumo = proximas.map(p => `${p.diaSemana} → ${p.data}`).join(', ');
+
+  return `\n## DATA E CALENDÁRIO ATUAL\nHoje é ${diaSemana}, ${dia}/${mes}/${ano}.\nPróximos 14 dias: ${resumo}\nUse essas datas ao perguntar qual dia o cliente quer. Nunca invente datas.\n`;
+}
+
 export function gerarPrompt(horariosOcupados = []) {
-  if (horariosOcupados.length === 0) return BASE_PROMPT;
+  const base = BASE_PROMPT + dataAtual();
+  if (horariosOcupados.length === 0) return base;
   const lista = horariosOcupados.map((h) => `  - ${h}`).join('\n');
-  return BASE_PROMPT + `\n## HORÁRIOS JÁ AGENDADOS (INDISPONÍVEIS)\nNão ofereça nem confirme estes horários — já estão ocupados:\n${lista}\n\nREGRA DE INTERVALO: cada atendimento dura aproximadamente 2 horas. Por isso, bloqueie também os 2 horas seguintes a cada horário acima. Exemplo: se há agendamento às 17h, os próximos disponíveis seriam a partir das 19h. Se o cliente pedir um horário bloqueado ou dentro do intervalo de 2h, diga que já está reservado e sugira o próximo horário disponível dentro do nosso funcionamento.\n`;
+  return base + `\n## HORÁRIOS JÁ AGENDADOS (INDISPONÍVEIS)\nNão ofereça nem confirme estes horários — já estão ocupados:\n${lista}\n\nREGRA DE INTERVALO: cada atendimento dura aproximadamente 2 horas. Por isso, bloqueie também os 2 horas seguintes a cada horário acima. Exemplo: se há agendamento às 17h, os próximos disponíveis seriam a partir das 19h. Se o cliente pedir um horário bloqueado ou dentro do intervalo de 2h, diga que já está reservado e sugira o próximo horário disponível dentro do nosso funcionamento.\n`;
 }
