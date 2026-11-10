@@ -25,6 +25,7 @@ const logger = pino({ level: 'silent' });
 
 // Servidor HTTP para exibir o QR Code no navegador
 let qrAtual = null;
+let whatsappConectado = false;
 const PORT = process.env.PORT || 3000;
 
 http.createServer(async (req, res) => {
@@ -44,6 +45,14 @@ http.createServer(async (req, res) => {
       <p>Configurações → Dispositivos conectados → Conectar dispositivo</p>
       <img src="${imgData}"/><p><small>A página atualiza sozinha a cada 20 segundos</small></p>
       </body></html>`);
+  } else if (req.url === '/status') {
+    if (whatsappConectado) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'conectado' }));
+    } else {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'desconectado' }));
+    }
   } else if (req.url === '/teste-ia') {
     try {
       const Groq = (await import('groq-sdk')).default;
@@ -113,6 +122,7 @@ async function conectar() {
     }
 
     if (connection === 'close') {
+      whatsappConectado = false;
       const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
       const reconectar = statusCode !== DisconnectReason.loggedOut;
       console.log(`⚠️  Conexão encerrada. Reconectar: ${reconectar}`);
@@ -126,6 +136,7 @@ async function conectar() {
 
     if (connection === 'open') {
       qrAtual = null;
+      whatsappConectado = true;
       console.log('✅ BEL Clean IA conectada ao WhatsApp!');
     }
   });
@@ -134,12 +145,27 @@ async function conectar() {
     if (type !== 'notify') return;
 
     for (const msg of messages) {
-      // Ignorar mensagens de grupos, status e do próprio bot
-      if (msg.key.fromMe) continue;
       if (msg.key.remoteJid.endsWith('@g.us')) continue;
       if (msg.key.remoteJid === 'status@broadcast') continue;
 
       const jid = msg.key.remoteJid;
+
+      // Comandos do dono (mensagens enviadas pelo próprio número)
+      if (msg.key.fromMe) {
+        const textoCmd = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+        const match = textoCmd.trim().match(/^\/(parar|retomar)\s+(\d+)/i);
+        if (match) {
+          const numero = match[2] + '@s.whatsapp.net';
+          if (match[1].toLowerCase() === 'parar') {
+            ativarAtendimentoHumano(numero);
+            await sock.sendMessage(jid, { text: `✅ IA pausada para ${match[2]}. Você pode atender agora.` });
+          } else {
+            resetarAtendimentoHumano(numero);
+            await sock.sendMessage(jid, { text: `✅ IA reativada para ${match[2]}.` });
+          }
+        }
+        continue;
+      }
       const isLocalizacao = !!msg.message?.locationMessage;
       const isAudio = !!msg.message?.audioMessage;
 
@@ -175,22 +201,6 @@ async function conectar() {
       console.log(`📩 [${jid}]: ${texto}`);
 
       enfileirar(jid, async () => {
-        // Comandos do dono
-        if (msg.key.fromMe && ehDono(jid)) {
-          const match = texto.trim().match(/^\/(parar|retomar)\s+(\d+)/i);
-          if (match) {
-            const numero = match[2] + '@s.whatsapp.net';
-            if (match[1].toLowerCase() === 'parar') {
-              ativarAtendimentoHumano(numero);
-              await sock.sendMessage(jid, { text: `✅ IA pausada para ${match[2]}. Você pode atender agora.` });
-            } else {
-              resetarAtendimentoHumano(numero);
-              await sock.sendMessage(jid, { text: `✅ IA reativada para ${match[2]}.` });
-            }
-          }
-          return;
-        }
-
         // Ignorar se em atendimento humano
         if (estaEmAtendimentoHumano(jid)) {
           console.log(`👤 [${jid}] Em atendimento humano — IA silenciada.`);
