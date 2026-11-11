@@ -201,10 +201,11 @@ async function conectar() {
           continue;
         }
       } else {
+        const isImagem = !!msg.message?.imageMessage;
         texto = msg.message?.conversation ||
           msg.message?.extendedTextMessage?.text ||
           msg.message?.imageMessage?.caption ||
-          '';
+          (isImagem ? '[cliente enviou uma foto do item]' : '');
       }
 
       if (!texto.trim()) continue;
