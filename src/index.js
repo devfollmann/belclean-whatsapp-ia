@@ -10,7 +10,7 @@ import makeWASocket, {
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
 import qrcode from 'qrcode-terminal';
-import { gerarResposta, extrairAgendamento, transcreverAudio } from './ia.js';
+import { gerarResposta, extrairAgendamento, transcreverAudio, analisarImagem } from './ia.js';
 import { downloadMediaMessage } from '@whiskeysockets/baileys';
 import { adicionarAgendamento, listarOcupados } from './agenda.js';
 import {
@@ -202,10 +202,26 @@ async function conectar() {
         }
       } else {
         const isImagem = !!msg.message?.imageMessage;
-        texto = msg.message?.conversation ||
-          msg.message?.extendedTextMessage?.text ||
-          msg.message?.imageMessage?.caption ||
-          (isImagem ? '[cliente enviou uma foto do item]' : '');
+        if (isImagem) {
+          try {
+            const buffer = await downloadMediaMessage(msg, 'buffer', {}, { logger, reuploadRequest: sock.updateMediaMessage });
+            const ehEstofado = await analisarImagem(buffer);
+            if (ehEstofado) {
+              texto = '[cliente enviou uma foto do item]';
+            } else {
+              await sock.sendMessage(jid, { text: 'Hmm, essa imagem não parece ser de um sofá, colchão ou outro item que higienizamos 😅 Pode enviar uma foto do item que deseja limpar?' });
+              continue;
+            }
+          } catch (err) {
+            console.error(`Erro ao processar imagem [${jid}]:`, err.message);
+            texto = '[cliente enviou uma foto do item]';
+          }
+        } else {
+          texto = msg.message?.conversation ||
+            msg.message?.extendedTextMessage?.text ||
+            msg.message?.imageMessage?.caption ||
+            '';
+        }
       }
 
       if (!texto.trim()) continue;

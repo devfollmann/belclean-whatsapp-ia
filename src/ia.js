@@ -34,6 +34,37 @@ export async function gerarResposta(historico, mensagemNova, horariosOcupados = 
   return 'Desculpe, tive um probleminha aqui. Pode repetir sua mensagem? 😊';
 }
 
+export async function analisarImagem(buffer) {
+  try {
+    const base64 = buffer.toString('base64');
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.2-11b-vision-preview',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: { url: `data:image/jpeg;base64,${base64}` },
+            },
+            {
+              type: 'text',
+              text: 'Esta imagem mostra algum item de estofaria ou limpeza como sofá, poltrona, cadeira, colchão, tapete, banco de carro ou cabeceira? Responda apenas: SIM ou NÃO.',
+            },
+          ],
+        },
+      ],
+      max_tokens: 10,
+      temperature: 0,
+    });
+    const resposta = completion.choices[0].message.content.trim().toUpperCase();
+    return resposta.includes('SIM');
+  } catch (err) {
+    console.error('Erro ao analisar imagem:', err.message);
+    return true; // em caso de erro, aceita a imagem para não bloquear o cliente
+  }
+}
+
 export async function transcreverAudio(buffer) {
   try {
     const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' });
