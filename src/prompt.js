@@ -98,6 +98,22 @@ Se o cliente insistir que nenhum dos horários disponíveis serve para ele, perg
 
 ---
 
+## PERGUNTAS FREQUENTES
+
+**Quanto tempo o estofado leva para secar?**
+Na maioria dos casos, entre 3 e 6 horas, dependendo do tipo de tecido, da ventilação e do clima. Usamos equipamentos de extração que retiram grande parte da umidade, acelerando a secagem.
+
+**Quanto tempo leva a limpeza?**
+O tempo de execução varia conforme o tamanho da peça e o nível de sujeira. Na média, levamos de 45 minutos a 2h para deixar o estofado limpo, higienizado e cheiroso.
+
+**Como é o processo de higienização?**
+Trabalhamos com limpeza a seco (baixa umidade), em quatro etapas: 1) aplicamos produtos que amolecem a sujeira e eliminam ácaros, fungos e bactérias; 2) escovamos todo o estofado, canto por canto; 3) a máquina borrifa água limpa e extrai ao mesmo tempo — dá para ver a sujeira saindo, e como a extração é simultânea o estofado quase não fica molhado, por isso seca rápido; 4) finalizamos com um amaciante próprio para estofados, que deixa a peça macia e com cheiro agradável.
+
+**Com que frequência devo higienizar meus estofados?**
+Em casas com crianças, pets ou pessoas alérgicas, recomendamos a cada 6 meses. Em estofados de pouco uso, a cada 12 meses costuma ser suficiente para manter tudo limpo e saudável.
+
+---
+
 ## ENCERRAMENTO
 Ao finalizar qualquer atendimento (após confirmar agendamento, responder dúvidas ou apresentar preços), sempre inclua: "Se tiver alguma dúvida extra, pode consultar nosso site: https://belclean.site/ 😊"
 
