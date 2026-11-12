@@ -12,7 +12,7 @@ import pino from 'pino';
 import qrcode from 'qrcode-terminal';
 import { gerarResposta, extrairAgendamento, transcreverAudio, analisarImagem } from './ia.js';
 import { downloadMediaMessage } from '@whiskeysockets/baileys';
-import { adicionarAgendamento, listarOcupados } from './agenda.js';
+import { adicionarAgendamento, listarOcupados, listarAgendamentos, cancelarAgendamento } from './agenda.js';
 import {
   adicionarMensagem,
   ativarAtendimentoHumano,
@@ -45,6 +45,42 @@ http.createServer(async (req, res) => {
       <p>Configurações → Dispositivos conectados → Conectar dispositivo</p>
       <img src="${imgData}"/><p><small>A página atualiza sozinha a cada 20 segundos</small></p>
       </body></html>`);
+  } else if (req.url === '/agendamentos') {
+    const lista = listarAgendamentos();
+    const linhas = lista.length === 0
+      ? '<p style="color:#888">Nenhum agendamento registrado.</p>'
+      : lista.map((a, i) => `
+          <tr>
+            <td>${a.data}</td>
+            <td>${a.horario}</td>
+            <td>${a.servico || '-'}</td>
+            <td>${a.cidade || '-'}</td>
+            <td>${a.cliente?.replace('@s.whatsapp.net','').replace('@lid','') || '-'}</td>
+            <td><a href="/cancelar?data=${encodeURIComponent(a.data)}&horario=${encodeURIComponent(a.horario)}" onclick="return confirm('Cancelar este agendamento?')" style="color:red">Cancelar</a></td>
+          </tr>`).join('');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Agendamentos BEL Clean</title>
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <style>body{font-family:sans-serif;padding:20px;background:#f5f5f5}
+      h2{color:#25D366}table{border-collapse:collapse;width:100%;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px #0001}
+      th{background:#25D366;color:#fff;padding:10px 14px;text-align:left}
+      td{padding:10px 14px;border-bottom:1px solid #eee}tr:last-child td{border:none}
+      a{text-decoration:none;font-weight:bold}</style></head>
+      <body><h2>📅 Agendamentos BEL Clean</h2>
+      <table><thead><tr><th>Data</th><th>Horário</th><th>Serviço</th><th>Cidade</th><th>Cliente</th><th>Ação</th></tr></thead>
+      <tbody>${linhas}</tbody></table>
+      <p style="margin-top:16px;color:#888;font-size:13px">Total: ${lista.length} agendamento(s)</p>
+      </body></html>`);
+  } else if (req.url?.startsWith('/cancelar')) {
+    const params = new URL(req.url, `http://localhost`).searchParams;
+    const data = params.get('data');
+    const horario = params.get('horario');
+    const ok = cancelarAgendamento(data, horario);
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="2;url=/agendamentos">
+      <style>body{font-family:sans-serif;text-align:center;padding:60px;background:#f5f5f5}</style></head>
+      <body><h3>${ok ? '✅ Agendamento cancelado!' : '⚠️ Agendamento não encontrado.'}</h3>
+      <p>Redirecionando...</p></body></html>`);
   } else if (req.url === '/status') {
     if (whatsappConectado) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -155,6 +191,29 @@ async function conectar() {
       // Comandos do dono (mensagens enviadas pelo próprio número)
       if (msg.key.fromMe) {
         const textoCmd = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+
+        // Comando /agendamentos
+        if (textoCmd.trim().toLowerCase() === '/agendamentos') {
+          const lista = listarAgendamentos();
+          if (lista.length === 0) {
+            await sock.sendMessage(jid, { text: '📅 Nenhum agendamento registrado.' });
+          } else {
+            const resumo = lista.map((a, i) =>
+              `${i+1}. ${a.data} às ${a.horario} — ${a.servico || 'serviço'} (${a.cidade || 'cidade'})`
+            ).join('\n');
+            await sock.sendMessage(jid, { text: `📅 *Agendamentos:*\n\n${resumo}\n\nPara cancelar: /cancelar DD/MM HH:MM` });
+          }
+          continue;
+        }
+
+        // Comando /cancelar DD/MM HH:MM
+        const matchCancelar = textoCmd.trim().match(/^\/cancelar\s+(\d{2}\/\d{2})\s+(\d{2}:\d{2})/i);
+        if (matchCancelar) {
+          const ok = cancelarAgendamento(matchCancelar[1], matchCancelar[2]);
+          await sock.sendMessage(jid, { text: ok ? `✅ Agendamento de ${matchCancelar[1]} às ${matchCancelar[2]} cancelado.` : `⚠️ Agendamento não encontrado.` });
+          continue;
+        }
+
         const match = textoCmd.trim().match(/^\/(parar|retomar)\s+([\d@a-z.]+)/i);
         if (match) {
           const entrada = match[2].trim();

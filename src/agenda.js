@@ -20,3 +20,18 @@ export function adicionarAgendamento({ data, horario, servico, cidade, cliente }
 export function listarOcupados() {
   return carregar().map((a) => `${a.data} às ${a.horario}`);
 }
+
+export function listarAgendamentos() {
+  return carregar();
+}
+
+export function cancelarAgendamento(data, horario) {
+  const lista = carregar();
+  const antes = lista.length;
+  const nova = lista.filter((a) => !(a.data === data && a.horario === horario));
+  if (nova.length < antes) {
+    salvar(nova);
+    return true;
+  }
+  return false;
+}
