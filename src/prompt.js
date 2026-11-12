@@ -47,8 +47,8 @@ REGRA DE APLICAÇÃO: calcule internamente e informe APENAS o valor final. Nunca
 | Sofá de 3 lugares ou mais | R$ 199,00 |
 | Cadeira | R$ 30,00 cada |
 | Colchão Solteiro | R$ 100,00 |
-| Colchão Casal | R$ 169,00 |
-| Colchão Queen ou King | R$ 199,00 |
+| Colchão Casal | R$ 159,00 |
+| Colchão Queen ou King | R$ 179,00 |
 | Poltrona | R$ 80,00 |
 | Cabeceira de cama | R$ 100,00 |
 | Bebê conforto | R$ 60,00 |
