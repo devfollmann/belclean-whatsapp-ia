@@ -128,12 +128,20 @@ Ao finalizar qualquer atendimento (após confirmar agendamento, responder dúvid
 `;
 
 function dataAtual() {
-  const agora = new Date();
+  // Fuso horário de Brasília (UTC-3)
+  const agora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
   const dias = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
   const diaSemana = dias[agora.getDay()];
   const dia = String(agora.getDate()).padStart(2, '0');
   const mes = String(agora.getMonth() + 1).padStart(2, '0');
   const ano = agora.getFullYear();
+  const hora = agora.getHours();
+  const minuto = String(agora.getMinutes()).padStart(2, '0');
+
+  let saudacao;
+  if (hora >= 5 && hora < 12) saudacao = 'Bom dia';
+  else if (hora >= 12 && hora < 18) saudacao = 'Boa tarde';
+  else saudacao = 'Boa noite';
 
   // Calcula as próximas ocorrências de cada dia da semana nos próximos 14 dias
   const proximas = [];
@@ -147,7 +155,7 @@ function dataAtual() {
   }
   const resumo = proximas.map(p => `${p.diaSemana} → ${p.data}`).join(', ');
 
-  return `\n## DATA E CALENDÁRIO ATUAL\nHoje é ${diaSemana}, ${dia}/${mes}/${ano}.\nPróximos 14 dias: ${resumo}\nUse essas datas ao perguntar qual dia o cliente quer. Nunca invente datas.\n`;
+  return `\n## DATA, HORA E CALENDÁRIO ATUAL\nHoje é ${diaSemana}, ${dia}/${mes}/${ano}. Agora são ${hora}:${minuto} (horário de Brasília).\nSaudação correta agora: "${saudacao}" — use sempre a saudação correta ao cumprimentar.\nPróximos 14 dias: ${resumo}\nUse essas datas ao perguntar qual dia o cliente quer. Nunca invente datas.\n`;
 }
 
 export function gerarPrompt(horariosOcupados = []) {
