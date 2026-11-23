@@ -68,7 +68,8 @@ Quando informar horários, use exatamente este texto: "Temos disponibilidade: se
 - Os valores informados aqui no WhatsApp são PROMOCIONAIS e exclusivos para pagamento via Pix.
 - Deixe claro isso ao cliente: "Aqui pelo WhatsApp você garante o nosso preço promocional, que é exclusivo para pagamento via Pix ou Dinheiro 😊"
 - Os valores normais (sem desconto) estão disponíveis no nosso site: https://belclean.site/
-- Se o cliente perguntar sobre pagamento no cartão de crédito, informe: "No crédito à vista não cobramos taxa 😊 Caso queira parcelar em 2x, acrescentamos apenas R$ 20,00 para cobrir os custos da maquininha."
+- No débito e no crédito à vista não há acréscimo algum.
+- Se o cliente perguntar sobre parcelamento ou acréscimo no cartão, informe: "No débito e no crédito à vista não tem acréscimo 😊 O único acréscimo é quando parcela: nesse caso adicionamos apenas R$ 20,00 no valor final do serviço para cobrir os custos da maquininha."
 
 ---
 

@@ -219,7 +219,6 @@ async function conectar() {
           const entrada = match[2].trim();
           let numero;
           if (entrada.includes('@')) {
-            // JID completo informado (ex: 19314635714732@lid)
             numero = entrada;
           } else {
             let digitos = entrada.replace(/\D/g, '');
@@ -232,6 +231,16 @@ async function conectar() {
           } else {
             resetarAtendimentoHumano(numero);
             await sock.sendMessage(jid, { text: `✅ IA reativada para ${numero}.` });
+          }
+          continue;
+        }
+
+        // Se o dono enviou qualquer mensagem diretamente para um cliente, pausa a IA automaticamente
+        const jidDono = NUMERO_DONO + '@s.whatsapp.net';
+        if (jid !== jidDono && textoCmd.trim() && !textoCmd.startsWith('/')) {
+          if (!estaEmAtendimentoHumano(jid)) {
+            ativarAtendimentoHumano(jid);
+            console.log(`👤 [${jid}] IA pausada automaticamente — dono assumiu a conversa.`);
           }
         }
         continue;
