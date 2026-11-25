@@ -288,6 +288,7 @@ async function conectar() {
             console.error(`Erro ao processar imagem [${jid}]:`, err.message);
             await sock.sendMessage(jid, { text: 'Não consegui analisar a imagem 😕 Pode tentar enviar novamente?' });
             continue;
+          }
         } else {
           texto = msg.message?.conversation ||
             msg.message?.extendedTextMessage?.text ||
