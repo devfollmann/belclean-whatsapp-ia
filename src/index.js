@@ -274,16 +274,20 @@ async function conectar() {
           try {
             const buffer = await downloadMediaMessage(msg, 'buffer', {}, { logger, reuploadRequest: sock.updateMediaMessage });
             const ehEstofado = await analisarImagem(buffer);
-            if (ehEstofado) {
+            if (ehEstofado === true) {
               texto = '[cliente enviou uma foto do item]';
-            } else {
+            } else if (ehEstofado === false) {
               await sock.sendMessage(jid, { text: 'Hmm, essa imagem não parece ser de um sofá, colchão ou outro item que higienizamos 😅 Pode enviar uma foto do item que deseja limpar?' });
+              continue;
+            } else {
+              // null = erro na análise, pede para reenviar
+              await sock.sendMessage(jid, { text: 'Não consegui analisar a imagem 😕 Pode tentar enviar novamente?' });
               continue;
             }
           } catch (err) {
             console.error(`Erro ao processar imagem [${jid}]:`, err.message);
-            texto = '[cliente enviou uma foto do item]';
-          }
+            await sock.sendMessage(jid, { text: 'Não consegui analisar a imagem 😕 Pode tentar enviar novamente?' });
+            continue;
         } else {
           texto = msg.message?.conversation ||
             msg.message?.extendedTextMessage?.text ||

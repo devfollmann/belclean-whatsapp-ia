@@ -49,19 +49,26 @@ export async function analisarImagem(buffer) {
             },
             {
               type: 'text',
-              text: 'Esta imagem mostra algum item de estofaria ou limpeza como sofá, poltrona, cadeira, colchão, tapete, banco de carro ou cabeceira? Responda apenas: SIM ou NÃO.',
+              text: 'Olhe esta imagem com atenção. Ela mostra algum item de estofaria ou limpeza doméstica como: sofá, poltrona, cadeira estofada, colchão, tapete, banco de carro ou cabeceira de cama? Responda SOMENTE com a palavra SIM ou NÃO, sem mais nada.',
             },
           ],
         },
       ],
-      max_tokens: 10,
+      max_tokens: 5,
       temperature: 0,
     });
     const resposta = completion.choices[0].message.content.trim().toUpperCase();
-    return resposta.includes('SIM');
+    console.log(`🔍 Análise de imagem: "${resposta}"`);
+    // Aceita se a resposta contiver SIM de alguma forma
+    if (resposta.includes('SIM')) return true;
+    if (resposta.includes('NÃO') || resposta.includes('NAO') || resposta.includes('NO')) return false;
+    // Se a resposta for ambígua, rejeita por segurança
+    console.log('⚠️ Resposta ambígua na análise de imagem, rejeitando.');
+    return false;
   } catch (err) {
     console.error('Erro ao analisar imagem:', err.message);
-    return true; // em caso de erro, aceita a imagem para não bloquear o cliente
+    // Em caso de erro de API, pede para o cliente reenviar
+    return null; // null = erro, tratar no index.js
   }
 }
 
