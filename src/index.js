@@ -237,11 +237,10 @@ async function conectar() {
 
         // Se o dono enviou qualquer mensagem diretamente para um cliente, pausa a IA automaticamente
         const jidDono = NUMERO_DONO + '@s.whatsapp.net';
-        if (jid !== jidDono && textoCmd.trim() && !textoCmd.startsWith('/')) {
-          if (!estaEmAtendimentoHumano(jid)) {
-            ativarAtendimentoHumano(jid);
-            console.log(`👤 [${jid}] IA pausada automaticamente — dono assumiu a conversa.`);
-          }
+        const naoEhDono = jid !== jidDono && !jid.startsWith(NUMERO_DONO);
+        if (naoEhDono && textoCmd.trim() && !textoCmd.trim().startsWith('/')) {
+          ativarAtendimentoHumano(jid);
+          console.log(`👤 [${jid}] IA pausada automaticamente — dono assumiu a conversa. Texto: "${textoCmd.substring(0,30)}"`);
         }
         continue;
       }
