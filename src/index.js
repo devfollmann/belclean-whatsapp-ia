@@ -325,7 +325,7 @@ async function conectar() {
           adicionarMensagem(jid, 'model', resposta);
           await sock.sendMessage(jid, { text: resposta });
 
-          if (resposta.includes('agendamento realizado com sucesso')) {
+          if (resposta.includes('agendamento realizado com sucesso') || resposta.includes('agendamento está confirmado') || resposta.includes('Seu agendamento está confirmado') || resposta.includes('agendamento confirmado')) {
             extrairAgendamento(obterHistorico(jid)).then((dados) => {
               if (dados?.data) {
                 adicionarAgendamento({ ...dados, cliente: jid });
